@@ -1,0 +1,12 @@
+tensorflow-gpu==1.14.0
+numpy
+opencv-python
+requests
+natsort
+pillow
+stn==1.0.1
+matplotlib
+flask
+torch
+torchvision
+git
