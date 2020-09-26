@@ -63,7 +63,7 @@ if __name__ == "__main__":
         elif key_in == 'open':
             url = 'http://' + my_ip + ':' + args.port + '/stream.html'
             webbrowser.open(url)
-        elif key_in == 'c':
+        elif key_in == 'ping':
             ret, frame = cap.read()
             if not ret:
                 print("fail")

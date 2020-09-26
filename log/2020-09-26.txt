@@ -18,3 +18,5 @@
 2020-09-26	23:41:59	client	start
 2020-09-26	23:42:46	client	start
 2020-09-26	23:43:15	client	start
+2020-09-26	23:47:08	client	start
+2020-09-26	23:37:20	cam_server	Shutdown
