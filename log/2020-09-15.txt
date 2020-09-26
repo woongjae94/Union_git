@@ -1,0 +1,5 @@
+2020-09-15	13:47:59	cam_server	start
+2020-09-15	13:48:35	client	start
+2020-09-15	13:47:59	cam_server	Shutdown
+2020-09-15	22:05:28	cam_server	start
+2020-09-15	22:05:28	cam_server	Shutdown
