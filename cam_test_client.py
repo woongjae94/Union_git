@@ -33,16 +33,22 @@ import tensorflow as tf
 from utils.log_util import add_log
 from model.hopenet import hopenet, hopenet_utils, hopenetlite_v2
 from utils.cam_client_util import *
+from utils.ip_util import get_ip_address
 
 
 # Arguments
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--ip', default='172.17.0.2', type=str, help="IP address of server")
+# IP address import
+my_ip = get_ip_address()
+#my_ip = '172.17.0.2'
+parser.add_argument('--ip', default=my_ip, type=str)
 parser.add_argument('--port', default='8090', type=str, help="port number for communicate")
 parser.add_argument('--headpose_mode', default='lite', type=str, help="lite | normal")
 parser.add_argument('--face_model', default='./model/hopenet/mmod_human_face_detector.dat', type=str, help='Path of DLIB face detection model.')
 parser.add_argument('--action_crop', default=True, type=bool, help='use crop img in action model')
+
+
 
 def set_backend_and_model(arg_mode):
     if args.headpose_mode == 'normal':
@@ -114,8 +120,8 @@ if __name__ == "__main__":
             print("Failed to connecting server")
             break
         #print("input frame size : ", str(frame.shape))
-        #frame = cv.resize(frame, (int(frame.shape[1]), int(frame.shape[0])), interpolation=cv.INTER_AREA)        
-        new_frame = cv.cvtColor(frame, cv.COLOR_BGR2RGB)
+        new_frame = cv.resize(frame, (int(frame.shape[1]*0.5), int(frame.shape[0]*0.5)), interpolation=cv.INTER_AREA)        
+        new_frame = cv.cvtColor(new_frame, cv.COLOR_BGR2RGB)
 
         face_detects = cnn_face_detector(new_frame, 1)
         after_face_detect = time.time()
@@ -141,8 +147,8 @@ if __name__ == "__main__":
                 y_max += bbox_height / 4
                 x_min = int(max(x_min, 0))
                 y_min = int(max(y_min, 0))
-                x_max = int(min(frame.shape[1], x_max))
-                y_max = int(min(frame.shape[0], y_max))
+                x_max = int(min(new_frame.shape[1], x_max))
+                y_max = int(min(new_frame.shape[0], y_max))
 
                 # Crop image
                 img = new_frame[y_min:y_max,x_min:x_max]
@@ -166,9 +172,9 @@ if __name__ == "__main__":
                 pitch_predicted = torch.sum(pitch_predicted.data[0] * idx_tensor) * 3 - 99
                 roll_predicted = torch.sum(roll_predicted.data[0] * idx_tensor) * 3 - 99
 
-                hopenet_utils.draw_axis(frame, yaw_predicted, pitch_predicted, roll_predicted, tdx = (x_min + x_max) / 2, tdy= (y_min + y_max) / 2, size = bbox_height/2)
+                hopenet_utils.draw_axis(new_frame, yaw_predicted, pitch_predicted, roll_predicted, tdx = (x_min + x_max) / 2, tdy= (y_min + y_max) / 2, size = bbox_height/2)
                 after_hopenet_draw = time.time()
-                cv.rectangle(frame, (x_min, y_min), (x_max, y_max), (0,255,0), 1)
+                cv.rectangle(new_frame, (x_min, y_min), (x_max, y_max), (0,255,0), 1)
                 after_rec_draw = time.time()
                 """
                 print("Duration -  ~ face detect : ", after_face_detect - start)
@@ -191,22 +197,10 @@ if __name__ == "__main__":
                     print("오른쪽")
                 elif(yaw_predicted>45):
                     print("오른쪽 멀리")
-                
 
-               # if len(clips) > 4:
-               #     if calc_framediff(clips) < 34.25:  # Avg. diff of 100 samples : 34.2453916243 -> 34.25
-               #         # crop all images
-               #         cropped_frames = CropFrames(yolo, meta, frames)
-               #         result, confidence_3, top_3 = pred_action_crop(cropped_frames)
-               #         print("\tcrop : {}, {}, {}".format(result, confidence_3[0], top_3))
-        
+        frame = cv.cvtColor(new_frame, cv.COLOR_RGB2BGR)
+        frame = cv.resize(frame, (int(frame.shape[1]*2), int(frame.shape[0]*2)), interpolation=cv.INTER_AREA)
         cv.imshow("test", frame)
-        #ret, jpeg = cv2.imencode('.jpg', cv2.resize(frame, (320, 240)))
-        #stream = jpeg.tobytes()
-
-        # for ROI streaming
-        #requests.post('http://127.0.0.1:5000/update_stream', data=stream)
-        
         if cv.waitKey(1) & 0xFF == ord('q'):
             break
     cap.release()

@@ -24,8 +24,8 @@ parser.add_argument('--multi', default=False, type=bool, help="If you use multi 
 
 
 # IP address import
-#my_ip = get_ip_address()
-my_ip = '172.17.0.2'
+my_ip = get_ip_address()
+#my_ip = '172.17.0.2'
 parser.add_argument('--ip', default=my_ip, type=str)
 
 # main
@@ -40,10 +40,12 @@ if __name__ == "__main__":
     main_notice.print_info()
 
     print("...Cam Streaming server Start ---------")
-    #cam_start = subprocess.Popen(["sh", "./cam/cam_streaming.sh"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+    cam_start = subprocess.Popen(["sh", "./cam/cam_streaming.sh"], stdout=subprocess.PIPE, stderr=subprocess.PIPE, stdin=subprocess.PIPE)
+    time.sleep(1)
 
     cam_address = 'http://' + args.ip + ':' + args.port + '/?action=stream'
     cap = cv.VideoCapture(cam_address)
+    print("...Cam Streaming server Connect -------")
     
     while(True):
         main_notice.print_main()

@@ -24,7 +24,7 @@ class get_args_and_set_stream:
     def write_setting_to_file(self):
         if not self.argdict["multi"]:
             command = "mjpg_streamer -i \"input_uvc.so -f " + self.argdict["fps"] + " -r " + self.convert_res(self.argdict["res"]) + "\" "
-            command += "-o \"output_http.so -p " + self.argdict["port"] + " -w /usr/local/share/mjpg-streamer/www/ -c admin:admin\""
+            command += "-o \"output_http.so -p " + self.argdict["port"] + " -w /usr/local/share/mjpg-streamer/www/\""
 
             with open("./cam/cam_streaming.sh", 'w') as f:
                 f.write(command)
