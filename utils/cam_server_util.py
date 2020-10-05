@@ -52,6 +52,7 @@ class main_discription:
         print("## info :  for see streaming infos     ##")
         print("## open :  for open streaming webpages ##")
         print("## quit :  for shutdown stream server  ##")
+        print("## ping :  for check connect streaming ##")
         print("#########################################")
 
 

@@ -1,0 +1,4 @@
+2020-10-01	12:26:22	cam_server	start
+2020-10-01	12:26:22	cam_server	Shutdown
+2020-10-01	12:32:29	cam_server	start
+2020-10-01	12:32:29	cam_server	Shutdown

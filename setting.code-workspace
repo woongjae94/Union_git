@@ -1,0 +1,10 @@
+{
+	"folders": [
+		{
+			"path": "."
+		}
+	],
+	"settings": {
+		"python.pythonPath": "/home/woongjae/anaconda3/envs/VSCODE_union/bin/python"
+	}
+}
