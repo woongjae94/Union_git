@@ -17,7 +17,7 @@ from utils.ip_util import get_ip_address
 # Arguments
 parser = argparse.ArgumentParser()
 
-parser.add_argument('--fps', default='20', type=str, help="Frame per Second, maximum 30")
+parser.add_argument('--fps', default='30', type=str, help="Frame per Second, maximum 30")
 parser.add_argument('--res', default='VGA', type=str, help="resolution of cam / details in \"res\" at main")
 parser.add_argument('--port', default='8090', type=str, help="port number for communicate")
 parser.add_argument('--multi', default=False, type=bool, help="If you use multi cam, Set True")

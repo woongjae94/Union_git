@@ -5,6 +5,7 @@ import time
 import subprocess
 import webbrowser
 import sys
+import time
 
 # Arguments
 parser = argparse.ArgumentParser()
@@ -44,8 +45,8 @@ device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
 print("Worker : ", device)
 os.system("nvcc --version")
 
-import tensorflow
-print("tensorflow ok")
+#import tensorflow
+#print("tensorflow ok")
 
 import numpy as np
 print("np ok")
@@ -63,3 +64,23 @@ print(cv2.__version__)
 
 import dlib
 print("dlib ok")
+
+
+#import Jetson.GPIO as GPIO
+#print("set")
+mills = lambda: int(round(time.time() * 1000))
+prev = mills()
+cap = cv2.VideoCapture('http://127.0.0.1:8090/?action=stream')
+while cap.isOpened():
+    now = mills()
+    ret, frame = cap.read()
+    print(prev, now, now - prev)
+    if now - prev > 100:
+        prev = now
+        if ret:
+            cv2.imshow("window",frame)
+            if cv2.waitKey(1) & 0xFF == ord('q'):
+                break
+cap.release()
+cv2.destroyAllWindows()
+

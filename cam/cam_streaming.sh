@@ -1,1 +1,1 @@
-mjpg_streamer -i "input_uvc.so -f 20 -r 640x480" -o "output_http.so -p 8090 -w /usr/local/share/mjpg-streamer/www/"
+mjpg_streamer -i "input_uvc.so -f 30 -r 640x480" -o "output_http.so -p 8090 -w /usr/local/share/mjpg-streamer/www/"
