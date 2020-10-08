@@ -6,3 +6,7 @@
 2020-10-08	03:31:30	cam_server	Shutdown
 2020-10-08	03:34:28	cam_server	start
 2020-10-08	03:34:28	cam_server	Shutdown
+2020-10-08	11:00:43	cam_server	start
+2020-10-08	11:01:14	client	start
+2020-10-08	11:00:43	cam_server	Shutdown
+2020-10-08	12:22:54	client	start
