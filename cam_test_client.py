@@ -21,7 +21,7 @@ import torch.nn.functional as F
 import torchvision
 
 #import TF base
-import tensorflow as tf
+#import tensorflow as tf
 
 #import from pre code
 #from model.darknet.python.darknet import *
@@ -48,7 +48,10 @@ parser.add_argument('--headpose_mode', default='lite', type=str, help="lite | no
 parser.add_argument('--face_model', default='./model/hopenet/mmod_human_face_detector.dat', type=str, help='Path of DLIB face detection model.')
 parser.add_argument('--action_crop', default=True, type=bool, help='use crop img in action model')
 
-
+mills = lambda: int(round(time.time() * 1000))
+head_pose = {0:"왼쪽 멀리", 1:"왼쪽", 2:"정면", 3:"오른쪽", 4:"오른쪽 멀리"}
+pose_list = [0,0,0,0,0]
+pose_cnt = 0
 
 def set_backend_and_model(arg_mode):
     if args.headpose_mode == 'normal':
@@ -62,15 +65,34 @@ def set_backend_and_model(arg_mode):
         print("arg_mode err, "+arg_mode)
         add_log("client", "Unexpected param in args.headpose_mode --> "+arg_mode)
         return None
-    
+
+def print_head_pose(angle_yaw):
+    global pose_list
+    global pose_cnt
+
+    if pose_cnt < 5:
+        if(angle_yaw < -46 ):
+            pose_list[0] += 1
+        elif(angle_yaw <= -20):
+            pose_list[1] += 1
+        elif(angle_yaw <= 10):
+            pose_list[2] += 1
+        elif(angle_yaw <=35):
+            pose_list[3] += 1
+        elif(angle_yaw >35):
+            pose_list[4] += 1
+        pose_cnt += 1
+    else:
+        print(head_pose[pose_list.index(max(pose_list))])
+        pose_list = [0,0,0,0,0]
+        pose_cnt = 0
+
 
 if __name__ == "__main__":
-    cudnn.enabled = True
-    print(dlib.DLIB_USE_CUDA)
-    
     add_log("client", "start")
     args = parser.parse_args()
     cam_address = 'http://' + args.ip + ':' + args.port + '/?action=stream'
+    #cam_address = 'http://cam_container:' + args.port + '/?action=stream'
 
     print("Load head pose model...")
     snapshot_path, model = set_backend_and_model(args.headpose_mode)
@@ -81,18 +103,6 @@ if __name__ == "__main__":
 
     print("Load face recognition dlib model...")
     cnn_face_detector = dlib.cnn_face_detection_model_v1(args.face_model)
-
-
-    print("Load part detection model...")
-    #yolo = load_net("./darknet/cfg/yolov3.cfg", "./darknet/cfg/yolov3.weights", 0)
-    #meta = load_meta("./darknet/cfg/coco.data")
-
-    print("Load Action model...")
-    #if args.action_crop:
-    #    action_model = I3DClassifier(os.path.join('model/I3D', 'i3d_crop'))
-    #else:
-    #    action_model = I3DClassifier()
-    
 
     # data transform
     transformations = transforms.Compose([
@@ -109,99 +119,76 @@ if __name__ == "__main__":
     cap = cv.VideoCapture(cam_address) #mjpg-streamer 프로그램을 통해 웹에서 데이터 획득
     #cap = cv.VideoCapture(0)          #로컬 카메라 사용
 
-    clips = []
-
+    prev_time = mills()
     while(True):
-        start = time.time()
+        now_time = mills()
         ret, frame = cap.read()
 
         if not ret:
             add_log("client", "connect Fail")
-            print("Failed to connecting server")
+            print("Failed to connecting cam streaming server")
             break
-        #print("input frame size : ", str(frame.shape))
-        new_frame = cv.resize(frame, (int(frame.shape[1]*0.5), int(frame.shape[0]*0.5)), interpolation=cv.INTER_AREA)        
-        new_frame = cv.cvtColor(new_frame, cv.COLOR_BGR2RGB)
+        if (now_time - prev_time) > 100:
+            prev_time = now_time
+            #print("input frame size : ", str(frame.shape))
+            new_frame = cv.resize(frame, (int(frame.shape[1]*0.5), int(frame.shape[0]*0.5)), interpolation=cv.INTER_AREA)        
+            new_frame = cv.cvtColor(new_frame, cv.COLOR_BGR2RGB)
 
-        face_detects = cnn_face_detector(new_frame, 1)
-        after_face_detect = time.time()
+            face_detects = cnn_face_detector(new_frame, 1)
 
-        #clips.append(new_frame)
+            for idx, det in enumerate(face_detects):
+                conf = det.confidence
+                if conf > 0.8:
+                    x_min = det.rect.left()
+                    y_min = det.rect.top()
+                    x_max = det.rect.right()
+                    y_max = det.rect.bottom()
 
-        for idx, det in enumerate(face_detects):
-            conf = det.confidence
-            #print(idx, " th confidence : ", conf)
+                    bbox_width = abs(x_max - x_min)
+                    bbox_height = abs(y_max - y_min)
+                    x_min -= 2 * bbox_width / 4
+                    x_max += 2 * bbox_width / 4
+                    y_min -= 3 * bbox_height / 4
+                    y_max += bbox_height / 4
+                    x_min = int(max(x_min, 0))
+                    y_min = int(max(y_min, 0))
+                    x_max = int(min(new_frame.shape[1], x_max))
+                    y_max = int(min(new_frame.shape[0], y_max))
 
-            if conf > 0.8:
-                x_min = det.rect.left()
-                y_min = det.rect.top()
-                x_max = det.rect.right()
-                y_max = det.rect.bottom()
+                    # Crop image
+                    img = new_frame[y_min:y_max,x_min:x_max]
+                    img = Image.fromarray(img)
 
-                
-                bbox_width = abs(x_max - x_min)
-                bbox_height = abs(y_max - y_min)
-                x_min -= 2 * bbox_width / 4
-                x_max += 2 * bbox_width / 4
-                y_min -= 3 * bbox_height / 4
-                y_max += bbox_height / 4
-                x_min = int(max(x_min, 0))
-                y_min = int(max(y_min, 0))
-                x_max = int(min(new_frame.shape[1], x_max))
-                y_max = int(min(new_frame.shape[0], y_max))
+                    # Transform
+                    img = transformations(img)
+                    img_shape = img.size()
+                    img = img.view(1, img_shape[0], img_shape[1], img_shape[2])
+                    img = Variable(img).cuda()
 
-                # Crop image
-                img = new_frame[y_min:y_max,x_min:x_max]
-                img = Image.fromarray(img)
+                    yaw, pitch, roll = model(img)
+                    after_hopenet = time.time()
 
-                # Transform
-                img = transformations(img)
-                img_shape = img.size()
-                img = img.view(1, img_shape[0], img_shape[1], img_shape[2])
-                img = Variable(img).cuda()
+                    yaw_predicted = F.softmax(yaw)
+                    pitch_predicted = F.softmax(pitch)
+                    roll_predicted = F.softmax(roll)
+                    
+                    # Get continuous predictions in degrees.
+                    yaw_predicted = torch.sum(yaw_predicted.data[0] * idx_tensor) * 3 - 99
+                    pitch_predicted = torch.sum(pitch_predicted.data[0] * idx_tensor) * 3 - 99
+                    roll_predicted = torch.sum(roll_predicted.data[0] * idx_tensor) * 3 - 99
 
-                yaw, pitch, roll = model(img)
-                after_hopenet = time.time()
+                    hopenet_utils.draw_axis(new_frame, yaw_predicted, pitch_predicted, roll_predicted, tdx = (x_min + x_max) / 2, tdy= (y_min + y_max) / 2, size = bbox_height/2)
+                    cv.rectangle(new_frame, (x_min, y_min), (x_max, y_max), (0,255,0), 1)
+                    
+                    # 예측 결과 출력
+                    print_head_pose(yaw_predicted)
 
-                yaw_predicted = F.softmax(yaw)
-                pitch_predicted = F.softmax(pitch)
-                roll_predicted = F.softmax(roll)
-                
-                # Get continuous predictions in degrees.
-                yaw_predicted = torch.sum(yaw_predicted.data[0] * idx_tensor) * 3 - 99
-                pitch_predicted = torch.sum(pitch_predicted.data[0] * idx_tensor) * 3 - 99
-                roll_predicted = torch.sum(roll_predicted.data[0] * idx_tensor) * 3 - 99
-
-                hopenet_utils.draw_axis(new_frame, yaw_predicted, pitch_predicted, roll_predicted, tdx = (x_min + x_max) / 2, tdy= (y_min + y_max) / 2, size = bbox_height/2)
-                after_hopenet_draw = time.time()
-                cv.rectangle(new_frame, (x_min, y_min), (x_max, y_max), (0,255,0), 1)
-                after_rec_draw = time.time()
-                """
-                print("Duration -  ~ face detect : ", after_face_detect - start)
-                print("         -  ~ hope net    : ", after_hopenet - after_face_detect)
-                print("         -  ~ net draw    : ", after_hopenet_draw - after_hopenet)
-                print("         -  ~ rec draw    : ", after_rec_draw - after_hopenet_draw)
-                
-                print("yaw_predicted: " + str(yaw_predicted))
-                print("pitch_predicted: " + str(pitch_predicted))
-                print("roll_predicted: " + str(roll_predicted))
-                """
-                
-                if(yaw_predicted < -50 ):
-                    print("왼쪽 멀리")
-                elif(yaw_predicted <= -20):
-                    print("왼쪽 ")
-                elif(yaw_predicted <= 10):
-                    print("중앙")
-                elif(yaw_predicted<=35):
-                    print("오른쪽")
-                elif(yaw_predicted>45):
-                    print("오른쪽 멀리")
-
-        frame = cv.cvtColor(new_frame, cv.COLOR_RGB2BGR)
-        frame = cv.resize(frame, (int(frame.shape[1]*2), int(frame.shape[0]*2)), interpolation=cv.INTER_AREA)
-        cv.imshow("test", frame)
-        if cv.waitKey(1) & 0xFF == ord('q'):
-            break
+            frame = cv.cvtColor(new_frame, cv.COLOR_RGB2BGR)
+            frame = cv.resize(frame, (int(frame.shape[1]*2), int(frame.shape[0]*2)), interpolation=cv.INTER_AREA)
+            cv.imshow("test", frame)
+            if cv.waitKey(1) & 0xFF == ord('q'):
+                break
+    
+    #while end
     cap.release()
     cv.destroyAllWindows()
