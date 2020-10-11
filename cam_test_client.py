@@ -49,7 +49,7 @@ parser.add_argument('--face_model', default='./model/hopenet/mmod_human_face_det
 parser.add_argument('--action_crop', default=True, type=bool, help='use crop img in action model')
 
 mills = lambda: int(round(time.time() * 1000))
-head_pose = {0:"왼쪽 멀리", 1:"왼쪽", 2:"정면", 3:"오른쪽", 4:"오른쪽 멀리"}
+head_pose = {0:"Far Left", 1:"Left", 2:"Center", 3:"Right", 4:"Far Right"}
 pose_list = [0,0,0,0,0]
 pose_cnt = 0
 
@@ -91,8 +91,8 @@ def print_head_pose(angle_yaw):
 if __name__ == "__main__":
     add_log("client", "start")
     args = parser.parse_args()
-    cam_address = 'http://' + args.ip + ':' + args.port + '/?action=stream'
-    #cam_address = 'http://cam_container:' + args.port + '/?action=stream'
+    #cam_address = 'http://' + args.ip + ':' + args.port + '/?action=stream'
+    cam_address = 'http://cam_container:' + args.port + '/?action=stream'
 
     print("Load head pose model...")
     snapshot_path, model = set_backend_and_model(args.headpose_mode)
@@ -120,9 +120,15 @@ if __name__ == "__main__":
     #cap = cv.VideoCapture(0)          #로컬 카메라 사용
 
     prev_time = mills()
+    wait_time = prev_time
     while(True):
         now_time = mills()
         ret, frame = cap.read()
+
+        if(now_time - wait_time) > 300000:
+            print("No Face for 5 min - head pose program still running")
+            prev_time = mills()
+            wait_time = prev_time
 
         if not ret:
             add_log("client", "connect Fail")
@@ -185,7 +191,7 @@ if __name__ == "__main__":
 
             frame = cv.cvtColor(new_frame, cv.COLOR_RGB2BGR)
             frame = cv.resize(frame, (int(frame.shape[1]*2), int(frame.shape[0]*2)), interpolation=cv.INTER_AREA)
-            cv.imshow("test", frame)
+            #cv.imshow("test", frame)
             if cv.waitKey(1) & 0xFF == ord('q'):
                 break
     
