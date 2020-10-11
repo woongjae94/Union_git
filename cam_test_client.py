@@ -188,6 +188,8 @@ if __name__ == "__main__":
                     
                     # 예측 결과 출력
                     print_head_pose(yaw_predicted)
+                    prev_time = mills()
+                    wait_time = prev_time
 
             frame = cv.cvtColor(new_frame, cv.COLOR_RGB2BGR)
             frame = cv.resize(frame, (int(frame.shape[1]*2), int(frame.shape[0]*2)), interpolation=cv.INTER_AREA)
