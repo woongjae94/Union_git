@@ -2,6 +2,18 @@
 	"folders": [
 		{
 			"path": "."
+		},
+		{
+			"path": "../../abr_union_demo_ref/gesture_tf_facial"
+		},
+		{
+			"path": "../../abr_union_demo_ref/action_tf_socket"
+		},
+		{
+			"path": "../../abr_union_demo_ref/gesture_tf_facial_copy"
+		},
+		{
+			"path": "../../abr_union_demo_ref/gesture_tf_socket _copy"
 		}
 	],
 	"settings": {
